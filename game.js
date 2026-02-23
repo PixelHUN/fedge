@@ -314,7 +314,32 @@ class GameSession {
 
     currentChance() {
         const targetSecs = this.settings.duration * 60;
-        return Math.min(1.0, Math.max(0.0, (this.elapsedSeconds - this.delay * targetSecs) / ((targetSecs + this.delay * 1.5 * targetSecs) * 1.35)));
+
+        // Ensure delay is properly scaled
+        const delaySecs = this.delay * targetSecs;
+
+        if (this.elapsedSeconds <= delaySecs) {
+            return 0.0;
+        }
+
+        const activeTime = this.elapsedSeconds - delaySecs;
+        const targetActiveTime = targetSecs - delaySecs;
+
+        if (activeTime < targetActiveTime) {
+            // Exponential phase: from 0% at delay, curving up to 40% at target duration
+            // A curve of 4.0 makes it stay extremely low for most of the session and only spikes at the very end
+            const progress = activeTime / targetActiveTime;
+            const curve = Math.pow(progress, 4.0);
+            return curve * 0.40; // Maxes out at 40% at the target duration
+        } else {
+            // Linear phase: from 40% at target duration, climbing linearly to 100% after an additional buffer
+            // Let's say it reaches 100% after an extra 35% of the target time
+            const postTargetTime = activeTime - targetActiveTime;
+            const maxOvertime = targetSecs * 0.35;
+            const linearProgress = Math.min(1.0, postTargetTime / maxOvertime);
+
+            return 0.35 + (linearProgress * 0.60); // Starts at 40%, adds up to 60%
+        }
     }
 
     async updateImage() {
