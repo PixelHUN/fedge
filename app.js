@@ -20,7 +20,8 @@ let state = {
     settings: {
         duration: 30,
         difficulty: 'normal',
-        overrideTags: ''
+        overrideTags: '',
+        playlistOrder: 'shuffle'
     }
 };
 
@@ -46,6 +47,7 @@ const setupForm = document.getElementById('setup-form');
 const startBtn = document.getElementById('start-session');
 
 const playlistSelect = document.getElementById('playlist-select');
+const playlistOrder = document.getElementById('playlist-order');
 const durationInput = document.getElementById('session-duration');
 const difficultyInput = document.getElementById('difficulty');
 const tagsInput = document.getElementById('tags-filter');
@@ -84,6 +86,7 @@ function loadState() {
     durationInput.value = state.settings.duration;
     difficultyInput.value = state.settings.difficulty;
     tagsInput.value = state.settings.overrideTags;
+    if (state.settings.playlistOrder) playlistOrder.value = state.settings.playlistOrder;
     if (state.characterId) characterInput.value = state.characterId;
 }
 
@@ -91,7 +94,8 @@ function saveState() {
     state.settings = {
         duration: parseInt(durationInput.value),
         difficulty: difficultyInput.value,
-        overrideTags: tagsInput.value.trim()
+        overrideTags: tagsInput.value.trim(),
+        playlistOrder: playlistOrder.value
     };
     state.characterId = characterInput.value;
     state.characterProfile = availableCharacters.find(c => c.id === state.characterId);
@@ -382,11 +386,27 @@ async function fetchCharacters() {
         const data = await response.json();
         availableCharacters = data.characters || [];
 
+        // Fetch the instructor images from e621
+        await Promise.all(availableCharacters.map(async char => {
+            if (char.avatarId) {
+                try {
+                    const r = await fetch(`https://e621.net/posts.json?tags=id:${char.avatarId}`);
+                    if (r.ok) {
+                        const postData = await r.json();
+                        if (postData.posts && postData.posts.length > 0) {
+                            char.avatarUrl = postData.posts[0].sample?.url || postData.posts[0].file?.url;
+                        }
+                    }
+                } catch (e) { console.error("Avatar fetch error", e); }
+            }
+        }));
+
         characterInput.innerHTML = '';
         availableCharacters.forEach(char => {
             const option = document.createElement('option');
             option.value = char.id;
-            option.textContent = `${char.avatar} ${char.name}`;
+            // No emoji, just the name in the dropdown (it's hard to put images in native <select>s)
+            option.textContent = char.name;
             characterInput.appendChild(option);
         });
     } catch (err) {
@@ -395,7 +415,7 @@ async function fetchCharacters() {
 }
 
 // Auto-save form inputs
-[durationInput, difficultyInput, tagsInput, characterInput].forEach(el => {
+[durationInput, difficultyInput, tagsInput, characterInput, playlistOrder].forEach(el => {
     el.addEventListener('change', saveState);
 });
 

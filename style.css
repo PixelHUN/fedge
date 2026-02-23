@@ -127,8 +127,8 @@ body.game-active {
 }
 
 #profile-pfp {
-  width: 100px;
-  height: 100px;
+  width: 110px;
+  height: 110px;
   border-radius: 50%;
   object-fit: cover;
   background: rgba(0, 0, 0, 0.3);
@@ -138,8 +138,19 @@ body.game-active {
 
 #profile-name {
   font-weight: 600;
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   letter-spacing: 0.5px;
+}
+
+@media (min-width: 768px) {
+  #profile-pfp {
+    width: 150px;
+    height: 150px;
+  }
+
+  #profile-name {
+    font-size: 1.8rem;
+  }
 }
 
 .container {

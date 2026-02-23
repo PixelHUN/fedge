@@ -3,7 +3,7 @@
     {
       "id": "foxy",
       "name": "Foxy",
-      "avatar": "🦊",
+      "avatarId": "6209972",
       "dialogue": {
         "READY": [
           "Time for a warmup!"
@@ -29,7 +29,7 @@
     {
       "id": "wolf",
       "name": "Wolf",
-      "avatar": "🐺",
+      "avatarId": "2345678",
       "dialogue": {
         "READY": [
           "Go ahead, get fapping."

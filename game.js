@@ -1,9 +1,13 @@
 class GameSession {
     constructor(favorites, settings, characterProfile) {
-        this.favorites = [...favorites].sort(() => Math.random() - 0.5);
+        this.settings = settings;
+        this.favorites = [...favorites];
+        if (this.settings.playlistOrder === 'shuffle') {
+            this.favorites.sort(() => Math.random() - 0.5);
+        }
+
         this.fireList = [];
         this.activeList = this.favorites;
-        this.settings = settings;
 
         // Load passed character or fallback
         this.characterProfile = characterProfile || {
@@ -22,7 +26,7 @@ class GameSession {
         this.isActive = true;
         this.currentUpdateId = 0;
         this.currentDisplayedChancePercent = 0; // tracking for visual lerp
-        this.delay = this.random_range_float(0.3, 0.45);
+        this.delay = this.random_range_float(0.275, 0.6);
 
         this.difficulties = {
             easy: { fap: [15, 30], stop: [20, 40] },
@@ -50,7 +54,12 @@ class GameSession {
         // Character Instructor elements
         this.instructorBubble = document.getElementById('instructor-bubble');
         this.instructorAvatar = document.getElementById('instructor-avatar');
-        this.instructorAvatar.textContent = this.characterProfile.avatar;
+
+        if (this.characterProfile.avatarUrl) {
+            this.instructorAvatar.innerHTML = `<img src="${this.characterProfile.avatarUrl}" style="width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 3px solid var(--accent-color); box-shadow: 0 8px 20px rgba(0,0,0,0.6);">`;
+        } else {
+            this.instructorAvatar.textContent = this.characterProfile.avatar || '🦊';
+        }
 
         document.getElementById('quit-btn').onclick = () => this.end();
         document.getElementById('restart-btn').onclick = () => {
@@ -326,19 +335,16 @@ class GameSession {
         const targetActiveTime = targetSecs - delaySecs;
 
         if (activeTime < targetActiveTime) {
-            // Exponential phase: from 0% at delay, curving up to 40% at target duration
             const progress = activeTime / targetActiveTime;
-            const curveExponent = 4.5;
+            const curveExponent = 8.0;
             const curve = Math.pow(progress, curveExponent);
-            return curve * 0.40; // Maxes out at 40% at the target duration
+            return curve * 0.15;
         } else {
-            // Linear phase: from 40% at target duration, climbing linearly to 100% after an additional buffer
-            // Let's say it reaches 100% after an extra 35% of the target time
             const postTargetTime = activeTime - targetActiveTime;
             const maxOvertime = targetSecs * 0.35;
             const linearProgress = Math.min(1.0, postTargetTime / maxOvertime);
 
-            return 0.35 + (linearProgress * 0.60); // Starts at 40%, adds up to 60%
+            return 0.15 + (linearProgress * 0.75);
         }
     }
 
