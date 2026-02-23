@@ -537,6 +537,32 @@ button {
 .top-bar-right {
   display: flex;
   justify-content: flex-end;
+  /* Make sure the timer aligns to the right */
+  text-align: right;
+}
+
+.btn-quit {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  z-index: 100;
+  padding: 10px 24px;
+  background: rgba(18, 18, 24, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.btn-quit:hover {
+  background: rgba(255, 51, 102, 0.2);
+  border-color: rgba(255, 51, 102, 0.5);
+  color: var(--error);
+  box-shadow: 0 0 15px rgba(255, 51, 102, 0.2);
 }
 
 #session-timer {
@@ -611,7 +637,7 @@ button {
 
 .character-instructor {
   position: absolute;
-  bottom: -12px;
+  bottom: -4px;
   left: 32px;
   display: flex;
   align-items: flex-end;

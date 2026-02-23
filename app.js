@@ -381,37 +381,46 @@ setupForm.addEventListener('submit', (e) => {
 // Utilities
 async function fetchCharacters() {
     try {
-        const response = await fetch('characters.json');
+        // Cache buster for local dev
+        const response = await fetch('characters.json?t=' + Date.now());
         if (!response.ok) throw new Error('Could not load characters config');
         const data = await response.json();
         availableCharacters = data.characters || [];
-
-        // Fetch the instructor images from e621
-        await Promise.all(availableCharacters.map(async char => {
-            if (char.avatarId) {
-                try {
-                    const r = await fetch(`https://e621.net/posts.json?tags=id:${char.avatarId}`);
-                    if (r.ok) {
-                        const postData = await r.json();
-                        if (postData.posts && postData.posts.length > 0) {
-                            char.avatarUrl = postData.posts[0].sample?.url || postData.posts[0].file?.url;
-                        }
-                    }
-                } catch (e) { console.error("Avatar fetch error", e); }
-            }
-        }));
-
-        characterInput.innerHTML = '';
-        availableCharacters.forEach(char => {
-            const option = document.createElement('option');
-            option.value = char.id;
-            // No emoji, just the name in the dropdown (it's hard to put images in native <select>s)
-            option.textContent = char.name;
-            characterInput.appendChild(option);
-        });
     } catch (err) {
         console.error("Failed to fetch characters.json:", err);
+        // Fallback characters if fetch fails (e.g. running via file:// directly without a web server)
+        availableCharacters = [
+            { id: 'foxy', name: 'Foxy', avatarId: '1234567', dialogue: { READY: ["Get Ready!"], FAP: ["Go!"], STOP: ["Stop!"], CUM: ["CUM!"] } },
+            { id: 'wolf', name: 'Wolf', avatarId: '2345678', dialogue: { READY: ["Begin."], FAP: ["Stroke."], STOP: ["Halt."], CUM: ["Finish."] } }
+        ];
     }
+
+    // Always populate the dropdown immediately with whatever we have
+    characterInput.innerHTML = '';
+    availableCharacters.forEach(char => {
+        const option = document.createElement('option');
+        option.value = char.id;
+        option.textContent = char.name;
+        characterInput.appendChild(option);
+    });
+
+    // Fetch the instructor images from e621 in the background without blocking
+    Promise.all(availableCharacters.map(async char => {
+        if (char.avatarId) {
+            try {
+                // e621 requires a user agent for API calls; browsers send one by default, but we'll use a direct fetch
+                const r = await fetch(`https://e621.net/posts.json?tags=id:${char.avatarId}`);
+                if (r.ok) {
+                    const postData = await r.json();
+                    if (postData.posts && postData.posts.length > 0) {
+                        char.avatarUrl = postData.posts[0].sample?.url || postData.posts[0].file?.url;
+                    }
+                }
+            } catch (e) {
+                console.error("Avatar fetch error for " + char.name, e);
+            }
+        }
+    }));
 }
 
 // Auto-save form inputs
@@ -466,9 +475,9 @@ if (simulateBtn) {
                             chance = curve * 0.15;
                         } else {
                             const postTargetTime = activeTime - targetActiveTime;
-                            const maxOvertime = targetSecs * 0.35;
+                            const maxOvertime = targetSecs * 0.25;
                             const linearProgress = Math.min(1.0, postTargetTime / maxOvertime);
-                            chance = 0.15 + (linearProgress * 0.75);
+                            chance = 0.15 + (linearProgress * 0.05);
                         }
                     }
 
