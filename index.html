@@ -15,27 +15,47 @@
 <body>
     <div class="background-animation"></div>
 
+    <!-- Top Header -->
+    <header class="app-header">
+        <div class="logo">f<span class="accent">Edge</span></div>
+        <button id="profile-btn" class="profile-btn" title="User Settings">
+            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='rgba(255,255,255,0.7)'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"
+                id="profile-pfp" alt="Profile">
+            <span id="profile-name">Guest</span>
+        </button>
+    </header>
+
     <main class="container">
-        <section class="glass-card" id="menu-card">
+        <!-- Main Menu View -->
+        <section class="glass-card view-section" id="main-menu-view">
             <header>
+                <h1>Welcome to <span class="accent">fEdge</span></h1>
+                <p class="subtitle">What would you like to do?</p>
+            </header>
+            <div class="menu-actions" style="display: flex; flex-direction: column; gap: 16px; margin-top: 32px;">
+                <button type="button" id="btn-nav-session" class="btn-primary"
+                    style="padding: 24px; font-size: 1.2rem;">Start Session</button>
+                <button type="button" id="btn-nav-playlists" class="btn-secondary"
+                    style="padding: 20px; font-size: 1.1rem;">Playlist Editor</button>
+            </div>
+        </section>
+
+        <!-- Session Planner View -->
+        <section class="glass-card view-section hidden" id="session-planner-view">
+            <header style="position: relative;">
+                <button type="button" class="btn-icon btn-back" id="btn-back-from-session"
+                    style="position: absolute; left: 0; top: 10px; background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1rem; font-weight: 600;">◀
+                    Back</button>
                 <h1>Session <span class="accent">Setup</span></h1>
                 <p class="subtitle">Prepare your next experience</p>
             </header>
 
             <form id="setup-form">
                 <div class="input-group">
-                    <label>e621 Username & Post Limit</label>
-                    <div class="input-wrapper" style="flex-wrap: wrap;">
-                        <input type="text" id="username" placeholder="Enter username..." style="flex: 1 1 200px;"
-                            required>
-                        <div style="display: flex; gap: 12px; flex: 1 1 200px;">
-                            <input type="number" id="post-limit" value="100" min="1" max="320"
-                                title="Post Limit (max 320)" style="width: 100px; flex-shrink: 0; text-align: center;"
-                                placeholder="Limit">
-                            <button type="button" id="load-favorites" class="btn-secondary"
-                                style="flex: 1; white-space: nowrap;">Load Favorites</button>
-                        </div>
-                    </div>
+                    <label for="playlist-select">Select Playlist</label>
+                    <select id="playlist-select">
+                        <option value="default">e621 Favorites (Default)</option>
+                    </select>
                     <p id="status-message" class="status-info"></p>
                 </div>
 
@@ -62,20 +82,99 @@
                 </div>
 
                 <div class="setting-item">
-                    <label for="tags-filter">Additional Tag Filter (optional)</label>
-                    <input type="text" id="tags-filter" placeholder="e.g. solo, -animated">
+                    <label for="tags-filter">Session Override Tags (optional addition)</label>
+                    <input type="text" id="tags-filter" placeholder="e.g. solo, -animated (adds to playlist)">
                 </div>
 
                 <div class="actions">
-                    <button type="submit" id="start-session" class="btn-primary" disabled>Start Session</button>
+                    <button type="submit" id="start-session" class="btn-primary" style="flex: 2;">Start Session</button>
+                    <button type="button" id="simulate-btn" class="btn-secondary" style="flex: 1;"
+                        title="Simulate 10,000 runs to test probability curve">Simulate 10k Runs</button>
                 </div>
             </form>
+
+            <div id="simulation-results" class="hidden"
+                style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--glass-border);">
+                <h3 style="margin-bottom: 12px; font-size: 1.2rem;">Simulation Results (10,000 runs)</h3>
+                <div
+                    style="display: flex; justify-content: space-between; margin-bottom: 16px; font-size: 0.9rem; color: var(--text-secondary);">
+                    <span>Min: <span id="sim-min" style="color: var(--text-primary);">0m</span></span>
+                    <span>Avg: <span id="sim-avg" style="color: var(--text-primary);">0m</span></span>
+                    <span>Med: <span id="sim-med" style="color: var(--text-primary);">0m</span></span>
+                    <span>Max: <span id="sim-max" style="color: var(--text-primary);">0m</span></span>
+                </div>
+                <div id="histogram-container" class="histogram">
+                    <!-- Bars inserted by JS -->
+                </div>
+                <div id="histogram-labels"
+                    style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px; padding: 0 4px;">
+                    <!-- Labels inserted by JS -->
+                </div>
+            </div>
         </section>
 
-        <section id="favorites-preview" class="hidden">
-            <h2>Loaded Favorites: <span id="fav-count">0</span></h2>
-            <div id="preview-grid" class="preview-grid"></div>
+        <!-- Playlist Editor View -->
+        <section class="glass-card view-section hidden" id="playlist-editor-view">
+            <header style="position: relative;">
+                <button type="button" class="btn-icon btn-back" id="btn-back-from-playlists"
+                    style="position: absolute; left: 0; top: 10px; background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1rem; font-weight: 600;">◀
+                    Back</button>
+                <h1>Playlist <span class="accent">Editor</span></h1>
+                <p class="subtitle">Manage your custom sequences</p>
+            </header>
+
+            <div style="display: flex; gap: 12px; margin-bottom: 24px;">
+                <select id="editor-playlist-select" style="flex: 2;">
+                    <!-- Populated via JS -->
+                </select>
+                <button type="button" id="btn-new-playlist" class="btn-secondary" style="flex: 1;">+ New</button>
+            </div>
+
+            <div id="playlist-edit-form" class="hidden">
+                <div class="input-group">
+                    <label for="edit-playlist-name">Playlist Name</label>
+                    <input type="text" id="edit-playlist-name" placeholder="Name">
+                </div>
+                <div class="input-group">
+                    <label for="edit-playlist-tags">e621 Search Tags</label>
+                    <input type="text" id="edit-playlist-tags" placeholder="e.g. fox solo animated order:score">
+                </div>
+                <div class="input-group">
+                    <label for="edit-playlist-ids">Specific Post IDs (comma separated)</label>
+                    <input type="text" id="edit-playlist-ids" placeholder="e.g. 123456, 789012">
+                </div>
+                <div class="input-group">
+                    <label for="edit-playlist-limit">Post Limit</label>
+                    <input type="number" id="edit-playlist-limit" value="100" min="1" max="320">
+                </div>
+                <div class="actions" style="justify-content: space-between;">
+                    <button type="button" id="btn-delete-playlist" class="btn-secondary"
+                        style="color: var(--error); border-color: rgba(255,51,102,0.3);">Delete</button>
+                    <button type="button" id="btn-save-playlist" class="btn-primary"
+                        style="width: auto; padding: 12px 32px;">Save Playlist</button>
+                </div>
+            </div>
         </section>
+
+        <!-- Profile Modal Overlay -->
+        <div id="profile-modal" class="hidden"
+            style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5,5,8,0.85); backdrop-filter: blur(10px); z-index: 3000; display: flex; justify-content: center; align-items: center;">
+            <div class="glass-card" style="width: 90%; max-width: 400px; padding: 32px;">
+                <h2 style="margin-bottom: 24px; text-align: center;">User <span class="accent">Profile</span></h2>
+                <div class="input-group">
+                    <label for="profile-edit-username">e621 Username (for Favorites)</label>
+                    <input type="text" id="profile-edit-username" placeholder="Username">
+                </div>
+                <div class="input-group">
+                    <label for="profile-edit-pfp">Profile Picture URL or e621 Post ID</label>
+                    <input type="text" id="profile-edit-pfp" placeholder="e.g. 1234567 or https://...">
+                </div>
+                <div class="actions" style="margin-top: 32px;">
+                    <button type="button" id="btn-close-profile" class="btn-secondary" style="flex: 1;">Cancel</button>
+                    <button type="button" id="btn-save-profile" class="btn-primary" style="flex: 1;">Save</button>
+                </div>
+            </div>
+        </div>
     </main>
 
     <div id="gameplay-view" class="hidden">
@@ -119,7 +218,7 @@
             </div>
 
             <div class="nav-hints">
-                <span>◀ Previous</span>
+                <span>◀ Prev</span>
                 <span>Next ▶</span>
             </div>
         </div>

@@ -327,9 +327,9 @@ class GameSession {
 
         if (activeTime < targetActiveTime) {
             // Exponential phase: from 0% at delay, curving up to 40% at target duration
-            // A curve of 4.0 makes it stay extremely low for most of the session and only spikes at the very end
             const progress = activeTime / targetActiveTime;
-            const curve = Math.pow(progress, 4.0);
+            const curveExponent = 4.5;
+            const curve = Math.pow(progress, curveExponent);
             return curve * 0.40; // Maxes out at 40% at the target duration
         } else {
             // Linear phase: from 40% at target duration, climbing linearly to 100% after an additional buffer
