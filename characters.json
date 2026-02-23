@@ -1,0 +1,58 @@
+{
+  "characters": [
+    {
+      "id": "foxy",
+      "name": "Foxy",
+      "avatar": "🦊",
+      "dialogue": {
+        "READY": [
+          "Time for a warmup!"
+        ],
+        "FAP": [
+          "Keep going!",
+          "Go faster!",
+          "Go slow and steady.",
+          "Stroke for me~"
+        ],
+        "STOP": [
+          "Hands off!",
+          "Stop.",
+          "Calm down.",
+          "Stop, hands off!"
+        ],
+        "CUM": [
+          "CUM! GO AHEAD!",
+          "CUM! NOW'S YOUR CHANCE!"
+        ]
+      }
+    },
+    {
+      "id": "wolf",
+      "name": "Wolf",
+      "avatar": "🐺",
+      "dialogue": {
+        "READY": [
+          "Go ahead, get fapping."
+        ],
+        "FAP": [
+          "Keep it going.",
+          "Beat it HARD.",
+          "Slow down, don't get ahead of yourself.",
+          "Fap.",
+          "Stroke it."
+        ],
+        "STOP": [
+          "Don't stop, just go veeery slow.",
+          "Stop, don't touch",
+          "Hold firmly at the base.",
+          "Stop, hands off!",
+          "Stop it."
+        ],
+        "CUM": [
+          "CUM! SUCH A GOOD BOY!",
+          "NOW'S YOUR TIME!"
+        ]
+      }
+    }
+  ]
+}

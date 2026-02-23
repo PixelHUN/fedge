@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edge Runner - Session Setup</title>
+    <meta name="description" content="Configure your edging session and load your e621 favorites.">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="background-animation"></div>
+
+    <main class="container">
+        <section class="glass-card" id="menu-card">
+            <header>
+                <h1>Session <span class="accent">Setup</span></h1>
+                <p class="subtitle">Prepare your next experience</p>
+            </header>
+
+            <form id="setup-form">
+                <div class="input-group">
+                    <label>e621 Username & Post Limit</label>
+                    <div class="input-wrapper" style="flex-wrap: wrap;">
+                        <input type="text" id="username" placeholder="Enter username..." style="flex: 1 1 200px;"
+                            required>
+                        <div style="display: flex; gap: 12px; flex: 1 1 200px;">
+                            <input type="number" id="post-limit" value="100" min="1" max="320"
+                                title="Post Limit (max 320)" style="width: 100px; flex-shrink: 0; text-align: center;"
+                                placeholder="Limit">
+                            <button type="button" id="load-favorites" class="btn-secondary"
+                                style="flex: 1; white-space: nowrap;">Load Favorites</button>
+                        </div>
+                    </div>
+                    <p id="status-message" class="status-info"></p>
+                </div>
+
+                <div class="settings-grid">
+                    <div class="setting-item">
+                        <label for="session-duration">Session Duration (min)</label>
+                        <input type="number" id="session-duration" value="30" min="5" max="240">
+                    </div>
+                    <div class="setting-item">
+                        <label for="difficulty">Difficulty</label>
+                        <select id="difficulty">
+                            <option value="easy">Gentle</option>
+                            <option value="normal" selected>Casual</option>
+                            <option value="hard">Intense</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <label for="instructor-character">Instructor</label>
+                        <select id="instructor-character">
+                            <!-- Populated dynamically via JS -->
+                            <option value="foxy">🦊 Foxy</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <label for="tags-filter">Additional Tag Filter (optional)</label>
+                    <input type="text" id="tags-filter" placeholder="e.g. solo, -animated">
+                </div>
+
+                <div class="actions">
+                    <button type="submit" id="start-session" class="btn-primary" disabled>Start Session</button>
+                </div>
+            </form>
+        </section>
+
+        <section id="favorites-preview" class="hidden">
+            <h2>Loaded Favorites: <span id="fav-count">0</span></h2>
+            <div id="preview-grid" class="preview-grid"></div>
+        </section>
+    </main>
+
+    <div id="gameplay-view" class="hidden">
+        <div id="image-container">
+            <div id="stage-overlay" class="stage-overlay">
+                <span id="stage-text">READY</span>
+            </div>
+        </div>
+
+        <div id="ui-overlay">
+            <div id="stage-progress-wrapper" class="stage-progress-wrapper">
+                <div id="stage-progress-bar" class="stage-progress-fill"></div>
+            </div>
+            <div class="top-bar">
+                <div class="top-bar-left">
+                    <span id="session-timer">00:00</span>
+                </div>
+
+                <div class="top-bar-center">
+                    <div class="chance-meter-circular" title="Finish Chance">
+                        <svg viewBox="0 0 100 100" class="chance-svg">
+                            <path class="chance-track" d="M 21.72 78.28 A 40 40 0 1 1 78.28 78.28" />
+                            <path id="finish-chance-path" class="chance-fill"
+                                d="M 21.72 78.28 A 40 40 0 1 1 78.28 78.28" />
+                        </svg>
+                        <div class="chance-content">
+                            <span class="chance-emoji">💧</span>
+                            <span id="finish-chance-text">0%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="top-bar-right">
+                    <button id="quit-btn" class="btn-quit">Quit</button>
+                </div>
+            </div>
+
+            <div class="character-instructor">
+                <div class="character-avatar" id="instructor-avatar">🦊</div>
+                <div class="speech-bubble" id="instructor-bubble">Get ready!</div>
+            </div>
+
+            <div class="nav-hints">
+                <span>◀ Previous</span>
+                <span>Next ▶</span>
+            </div>
+        </div>
+
+        <div id="finish-screen" class="hidden">
+            <div class="glass-card text-center">
+                <h2>SESSION COMPLETE</h2>
+                <div class="stats-container">
+                    <div class="stat-item">
+                        <span class="stat-label">Total Time</span>
+                        <span id="stat-time" class="stat-value">00:00</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Pictures Seen</span>
+                        <span id="stat-pictures" class="stat-value">0</span>
+                    </div>
+                </div>
+                <button id="restart-btn" class="btn-primary" style="margin-top: 24px;">Back to Menu</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
