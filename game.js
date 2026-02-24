@@ -56,12 +56,16 @@ class GameSession {
         this.instructorAvatar = document.getElementById('instructor-avatar');
 
         if (this.characterProfile.avatarUrl) {
-            this.instructorAvatar.innerHTML = `<img src="${this.characterProfile.avatarUrl}" style="width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 3px solid var(--accent-color); box-shadow: 0 8px 20px rgba(0,0,0,0.6);">`;
+            this.instructorAvatar.innerHTML = `<img src="${this.characterProfile.avatarUrl}" style="width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent-glow); box-shadow: 0 0 15px var(--accent-glow), 0 8px 20px rgba(0,0,0,0.6);">`;
         } else {
             this.instructorAvatar.textContent = this.characterProfile.avatar || '🦊';
         }
 
         document.getElementById('quit-btn').onclick = () => this.end();
+        const pauseBtn = document.getElementById('pause-btn');
+        if (pauseBtn) {
+            pauseBtn.onclick = () => this.togglePause();
+        }
         document.getElementById('restart-btn').onclick = () => {
             this.finishScreen.classList.add('hidden');
             this.end();
@@ -69,7 +73,7 @@ class GameSession {
 
         // Keyboard navigation
         window.onkeydown = (e) => {
-            if (!this.isActive) return;
+            if (!this.isActive || this.isPaused) return;
             if (this.currentStage === 'FAP' || this.currentStage === 'CUM') {
                 if (e.key === 'ArrowRight') this.nextImage();
                 if (e.key === 'ArrowLeft') this.prevImage();
@@ -96,7 +100,7 @@ class GameSession {
         let touchEndY = 0;
 
         const handleSwipe = () => {
-            if (!this.isActive) return;
+            if (!this.isActive || this.isPaused) return;
             if (this.currentStage !== 'FAP' && this.currentStage !== 'CUM') return;
 
             const distX = touchEndX - touchStartX;
@@ -172,12 +176,40 @@ class GameSession {
 
     startSessionTimer() {
         this.timer = setInterval(() => {
-            if (!this.isActive) return;
+            if (!this.isActive || this.isPaused) return;
             this.elapsedSeconds++;
             const mins = Math.floor(this.elapsedSeconds / 60);
             const secs = this.elapsedSeconds % 60;
             this.timerDisplay.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
         }, 1000);
+    }
+
+    togglePause() {
+        if (!this.isActive) return;
+        if (this.currentStage === 'CUM') return; // Do not pause during end phase
+
+        this.isPaused = !this.isPaused;
+        const pauseBtn = document.getElementById('pause-btn');
+        if (pauseBtn) {
+            pauseBtn.textContent = this.isPaused ? 'Resume' : 'Pause';
+            pauseBtn.classList.toggle('active', this.isPaused);
+        }
+
+        if (this.isPaused) {
+            // Keep the previous current stage message for resume? Let's just override with pause.
+            this.speak("Session paused.", 0);
+            this.imgContainer.classList.add('stage-stop'); // Visual pause effect
+        } else {
+            this.speak("Resuming!", 2000);
+            this.imgContainer.classList.remove('stage-stop');
+
+            // Re-apply correct stage styling
+            if (this.currentStage === 'FAP') {
+                this.view.className = 'stage-fap';
+            } else if (this.currentStage === 'STOP') {
+                this.view.className = 'stage-stop';
+            }
+        }
     }
 
     updateFinishChance() {
@@ -295,7 +327,11 @@ class GameSession {
         const step = tick / 1000;
 
         const updateBar = () => {
-            if (!this.isActive || this.isPaused) return;
+            if (!this.isActive) return;
+            if (this.isPaused) {
+                this.stageTimer = setTimeout(updateBar, tick);
+                return;
+            }
 
             this.stageRemaining -= step;
             const percentage = Math.max(0, (this.stageRemaining / this.stageDuration) * 100);

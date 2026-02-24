@@ -541,17 +541,24 @@ button {
   text-align: right;
 }
 
-.btn-quit {
+.game-controls {
   position: absolute;
   top: 24px;
-  right: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 12px;
   z-index: 100;
-  padding: 10px 24px;
+}
+
+.btn-quit,
+.btn-pause {
+  padding: 8px 16px;
   background: rgba(18, 18, 24, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: var(--text-secondary);
   border-radius: 8px;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   letter-spacing: 1px;
   text-transform: uppercase;
   backdrop-filter: blur(10px);
@@ -563,6 +570,14 @@ button {
   border-color: rgba(255, 51, 102, 0.5);
   color: var(--error);
   box-shadow: 0 0 15px rgba(255, 51, 102, 0.2);
+}
+
+.btn-pause:hover,
+.btn-pause.active {
+  background: rgba(5, 217, 232, 0.2);
+  border-color: rgba(5, 217, 232, 0.5);
+  color: var(--success);
+  box-shadow: 0 0 15px rgba(5, 217, 232, 0.2);
 }
 
 #session-timer {
@@ -685,24 +700,7 @@ button {
   transform: translateY(0) scale(1);
 }
 
-.btn-quit {
-  padding: 14px 28px;
-  background: rgba(255, 51, 102, 0.05);
-  border: 1px solid rgba(255, 51, 102, 0.2);
-  border-radius: 12px;
-  color: var(--error);
-  font-size: 1rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
 
-.btn-quit:hover {
-  background: rgba(255, 51, 102, 0.15);
-  border-color: rgba(255, 51, 102, 0.4);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 51, 102, 0.2);
-}
 
 .nav-hints {
   display: flex;
