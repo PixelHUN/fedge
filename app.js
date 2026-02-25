@@ -21,7 +21,9 @@ let state = {
         duration: 30,
         difficulty: 'normal',
         overrideTags: '',
-        playlistOrder: 'shuffle'
+        playlistOrder: 'shuffle',
+        mode: 'edge',
+        strokePace: 5
     }
 };
 
@@ -52,6 +54,12 @@ const durationInput = document.getElementById('session-duration');
 const difficultyInput = document.getElementById('difficulty');
 const tagsInput = document.getElementById('tags-filter');
 const characterInput = document.getElementById('instructor-character');
+const gameModeSelect = document.getElementById('game-mode');
+const strokePaceInput = document.getElementById('stroke-pace');
+const modeDescription = document.getElementById('mode-description');
+const fapSettings = document.getElementById('fap-settings');
+const durationContainer = document.getElementById('duration-setting-item');
+const difficultyHint = document.getElementById('difficulty-hint');
 
 const editorPlaylistSelect = document.getElementById('editor-playlist-select');
 const editPlaylistForm = document.getElementById('playlist-edit-form');
@@ -87,15 +95,74 @@ function loadState() {
     difficultyInput.value = state.settings.difficulty;
     tagsInput.value = state.settings.overrideTags;
     if (state.settings.playlistOrder) playlistOrder.value = state.settings.playlistOrder;
+    if (state.settings.mode) gameModeSelect.value = state.settings.mode;
+    if (state.settings.strokePace) strokePaceInput.value = state.settings.strokePace;
     if (state.characterId) characterInput.value = state.characterId;
+
+    updateGameModeUI(gameModeSelect.value);
 }
+
+function updateGameModeUI(mode) {
+    const difficultyContainer = document.getElementById('difficulty-setting-item');
+    if (difficultyContainer) {
+        if (mode === 'fap') {
+            difficultyContainer.classList.add('hidden');
+        } else {
+            difficultyContainer.classList.remove('hidden');
+        }
+    }
+
+    if (durationContainer) {
+        if (mode === 'swipe') {
+            durationContainer.classList.add('hidden');
+        } else {
+            durationContainer.classList.remove('hidden');
+        }
+    }
+
+    if (mode === 'edge') {
+        modeDescription.textContent = 'Default edging experience with Stop and Go phases.';
+        fapSettings.classList.add('hidden');
+    } else if (mode === 'fap') {
+        modeDescription.textContent = 'Continuous viewing without forced stops. Stroking pace controls auto-scroll speed.';
+        fapSettings.classList.remove('hidden');
+    } else if (mode === 'swipe') {
+        modeDescription.textContent = 'Tinder-like swipe mode! Right swipe to increase match chance for a CUM stage.';
+        fapSettings.classList.add('hidden');
+    }
+
+    updateDifficultyHint();
+}
+
+function updateDifficultyHint() {
+    if (!difficultyHint) return;
+    const mode = gameModeSelect.value;
+    const diff = difficultyInput.value;
+
+    if (mode === 'swipe') {
+        const est = { 'easy': '10-15', 'normal': '25-40', 'hard': '40-60', 'extreme': '60-90' };
+        difficultyHint.textContent = `Est. Session: ~${est[diff] || '25-40'} mins`;
+    } else {
+        difficultyHint.textContent = '';
+    }
+}
+
+gameModeSelect.addEventListener('change', (e) => {
+    updateGameModeUI(e.target.value);
+});
+
+difficultyInput.addEventListener('change', () => {
+    updateDifficultyHint();
+});
 
 function saveState() {
     state.settings = {
         duration: parseInt(durationInput.value),
         difficulty: difficultyInput.value,
         overrideTags: tagsInput.value.trim(),
-        playlistOrder: playlistOrder.value
+        playlistOrder: playlistOrder.value,
+        mode: gameModeSelect.value,
+        strokePace: parseInt(strokePaceInput.value) || 5
     };
     state.characterId = characterInput.value;
     state.characterProfile = availableCharacters.find(c => c.id === state.characterId);
@@ -424,7 +491,7 @@ async function fetchCharacters() {
 }
 
 // Auto-save form inputs
-[durationInput, difficultyInput, tagsInput, characterInput, playlistOrder].forEach(el => {
+[durationInput, difficultyInput, tagsInput, characterInput, playlistOrder, gameModeSelect, strokePaceInput].forEach(el => {
     el.addEventListener('change', saveState);
 });
 
