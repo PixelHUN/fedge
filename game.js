@@ -815,10 +815,39 @@ class GameSession {
         this.statTime.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
         this.statPictures.textContent = this.picturesSeen.toString();
 
+        // Calculate XP
+        let targetSecs;
+        if (this.settings.mode === 'swipe') {
+            targetSecs = this.targetSwipeSecs + (0.1 * this.targetSwipeSecs);
+        } else {
+            targetSecs = this.settings.duration * 60;
+        }
+
+        if (window.completeSession) {
+            const results = window.completeSession(this.elapsedSeconds, targetSecs, false);
+            this.showXpResults(results);
+        }
+
         this.finishScreen.classList.remove('hidden');
     }
 
     end() {
+        if (!this.isActive && !this.finishScreen.classList.contains('hidden')) {
+            // If already ended via win and we are just closing the finish screen
+            this.finishScreen.classList.add('hidden');
+        } else if (this.isActive) {
+            // If aborting early
+            if (this.elapsedSeconds > 60 && window.completeSession) {
+                let targetSecs;
+                if (this.settings.mode === 'swipe') {
+                    targetSecs = this.targetSwipeSecs + (0.1 * this.targetSwipeSecs);
+                } else {
+                    targetSecs = this.settings.duration * 60;
+                }
+                window.completeSession(this.elapsedSeconds, targetSecs, true);
+            }
+        }
+
         this.isActive = false;
         this.stopTimers();
         clearTimeout(this.speechTimer);
@@ -832,6 +861,38 @@ class GameSession {
         imageWrappers.forEach(el => el.remove());
         if (this.stageText) this.stageText.textContent = 'READY';
         this.currentImgElement = null;
+    }
+
+    showXpResults(results) {
+        const xpGained = document.getElementById('finish-xp-gained');
+        const streakText = document.getElementById('finish-streak-text');
+        const streakDay = document.getElementById('finish-streak-day');
+        const streakStatus = document.getElementById('finish-streak-status');
+        const levelText = document.getElementById('finish-levelup-text');
+        const newLevel = document.getElementById('finish-new-level');
+
+        if (xpGained) xpGained.textContent = results.xpAdded;
+
+        if (streakText) {
+            streakText.classList.remove('hidden');
+            streakDay.textContent = results.currentStreak;
+            if (results.isNewStreak) {
+                streakStatus.textContent = 'Increased';
+            } else if (results.streakMaintained) {
+                streakStatus.textContent = 'Maintained';
+            } else {
+                streakStatus.textContent = 'Started';
+            }
+        }
+
+        if (levelText) {
+            if (results.leveledUp) {
+                levelText.classList.remove('hidden');
+                newLevel.textContent = results.currentLevel;
+            } else {
+                levelText.classList.add('hidden');
+            }
+        }
     }
 
     stopTimers() {

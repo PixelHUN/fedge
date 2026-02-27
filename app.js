@@ -4,6 +4,12 @@ let state = {
         username: '',
         pfp: ''
     },
+    stats: {
+        xp: 0,
+        level: 1,
+        streak: 0,
+        lastSessionDate: null
+    },
     playlists: [
         {
             id: 'default',
@@ -83,6 +89,10 @@ function loadState() {
         try {
             const parsed = JSON.parse(saved);
             state = { ...state, ...parsed };
+            // Ensure backwards compatibility for stats
+            if (!state.stats) {
+                state.stats = { xp: 0, level: 1, streak: 0, lastSessionDate: null };
+            }
             // Ensure default playlist exists
             if (!state.playlists.find(p => p.id === 'default')) {
                 state.playlists.unshift({ id: 'default', name: 'e621 Favorites', tags: '', postIds: [], limit: 100, isDefault: true });
@@ -170,6 +180,95 @@ function saveState() {
     localStorage.setItem('edge_runner_data', JSON.stringify(state));
 }
 
+// Session XP and Streak Calculation
+window.completeSession = function (elapsedSeconds, targetSeconds, isEarlyFinish) {
+    const minutes = Math.floor(elapsedSeconds / 60);
+    if (minutes < 1) return { xpAdded: 0, streakMaintained: false }; // Too short
+
+    let xpToAdd = 0;
+
+    if (isEarlyFinish) {
+        xpToAdd = Math.floor(Math.pow(minutes, 1.5) * 2);
+    } else {
+        const targetMinutes = Math.floor(targetSeconds / 60);
+        xpToAdd = Math.floor(Math.pow(targetMinutes, 1.5) * 2);
+
+        if (elapsedSeconds > targetSeconds) {
+            const overtimeMinutes = Math.floor((elapsedSeconds - targetSeconds) / 60);
+            if (overtimeMinutes > 0) {
+                xpToAdd += Math.floor(Math.pow(overtimeMinutes, 1.2) * 3);
+            }
+        }
+    }
+
+    // Streak logic
+    const todayStr = new Date().toISOString().split('T')[0];
+    let streakMaintained = false;
+    let newStreak = false;
+
+    if (!state.stats.lastSessionDate) {
+        state.stats.streak = 1;
+        state.stats.lastSessionDate = todayStr;
+        streakMaintained = true;
+        newStreak = true;
+    } else {
+        const today = new Date(todayStr); // using ISO string ensures UTC midnight aligned
+        const last = new Date(state.stats.lastSessionDate);
+
+        // Calculate difference in days strictly
+        const todayUtc = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+        const lastUtc = Date.UTC(last.getFullYear(), last.getMonth(), last.getDate());
+        const diffDays = Math.floor((todayUtc - lastUtc) / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 0) {
+            // Already played today, streak remains the same
+            streakMaintained = true;
+        } else if (diffDays === 1) {
+            // Played consecutive day
+            state.stats.streak += 1;
+            state.stats.lastSessionDate = todayStr;
+            streakMaintained = true;
+            newStreak = true;
+        } else {
+            // Streak broken
+            state.stats.streak = 1;
+            state.stats.lastSessionDate = todayStr;
+            newStreak = true;
+        }
+    }
+
+    // Leveling logic
+    state.stats.xp += xpToAdd;
+    let leveledUp = false;
+    let levelsGained = 0;
+
+    const getXpNeeded = (lvl) => Math.floor(Math.pow(lvl, 1.5) * 100);
+    let xpNeeded = getXpNeeded(state.stats.level);
+
+    while (state.stats.xp >= xpNeeded) {
+        state.stats.xp -= xpNeeded;
+        state.stats.level += 1;
+        levelsGained += 1;
+        leveledUp = true;
+        xpNeeded = getXpNeeded(state.stats.level);
+    }
+
+    saveState();
+    updateUIProfile();
+
+    return {
+        xpAdded: xpToAdd,
+        streakMaintained: streakMaintained,
+        isNewStreak: newStreak, // Did the streak actually increment today?
+        leveledUp: leveledUp,
+        levelsGained: levelsGained,
+        currentStreak: state.stats.streak,
+        currentXp: state.stats.xp,
+        xpNeeded: getXpNeeded(state.stats.level),
+        currentLevel: state.stats.level
+    };
+};
+
 // View Routing
 function showView(viewName) {
     Object.values(views).forEach(v => v.classList.add('hidden'));
@@ -229,6 +328,22 @@ function updateUIProfile() {
         profilePfp.src = state.profile.pfp;
     } else {
         profilePfp.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
+    }
+
+    if (document.getElementById('ui-stat-level')) {
+        document.getElementById('ui-stat-level').textContent = state.stats.level;
+        document.getElementById('ui-stat-streak').textContent = state.stats.streak;
+
+        const xpNeeded = Math.floor(Math.pow(state.stats.level, 1.5) * 100);
+        document.getElementById('ui-stat-xp-text').textContent = `${state.stats.xp} / ${xpNeeded} XP`;
+
+        const xpPercent = Math.min(100, Math.max(0, (state.stats.xp / xpNeeded) * 100));
+
+        // Wait a frame before applying the width so the CSS transition can trigger visually for the user
+        setTimeout(() => {
+            const fillEl = document.getElementById('ui-stat-xp-fill');
+            if (fillEl) fillEl.style.width = `${xpPercent}%`;
+        }, 50);
     }
 }
 
