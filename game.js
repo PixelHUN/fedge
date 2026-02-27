@@ -706,11 +706,11 @@ class GameSession {
 
             // Probability of injecting a Liked image scales with current chance (up to 100%)
             // When chance is 100%, we want ALL pictures to be from fireList.
-            const chancePct = Math.min(this.currentDisplayedChancePercent, 45);
+            const chancePct = Math.min(this.currentDisplayedChancePercent, 70);
 
             // Map 0 -> 0 injection
             // Map 100 -> 100% injection rate
-            const injectionThreshold = (chancePct / 45);
+            const injectionThreshold = (chancePct / 70);
 
             if (Math.random() < injectionThreshold) {
                 // Inject from fireList
