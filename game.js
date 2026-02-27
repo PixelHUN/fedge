@@ -37,14 +37,14 @@ class GameSession {
         };
 
         if (this.settings.mode === 'swipe') {
-            const diffCurves = {
-                easy: [10, 15],
-                normal: [25, 40],
-                hard: [40, 60],
-                extreme: [60, 90]
+            const chanceIncrements = {
+                easy: 0.02,     // +2%
+                normal: 0.01,   // +1%
+                hard: 0.005,    // +0.5%
+                extreme: 0.0025 // +0.25%
             };
-            const range = diffCurves[this.settings.difficulty] || diffCurves['normal'];
-            this.targetSwipeSecs = this.random_range(range[0], range[1]) * 60;
+            this.swipeChanceIncrement = chanceIncrements[this.settings.difficulty] || 0.10;
+            this.currentSwipeChance = 0.0;
             this.swipeRightCount = 0;
             this.swipeModeImageCount = 0;
         }
@@ -294,14 +294,12 @@ class GameSession {
         const mode = this.settings.mode || 'edge';
 
         if (this.currentStage === 'CUM') {
-            // In Swipe mode, keep playing until session time is hit
-            if (mode === 'swipe' && this.elapsedSeconds < this.settings.duration * 60) {
+            // In Swipe mode, keep playing endlessly
+            if (mode === 'swipe') {
                 this.currentStage = 'FAP';
                 this.view.className = 'stage-fap';
 
-                // 20% Penalty: add 20% to our current effective target time
-                this.targetSwipeSecs += (this.targetSwipeSecs * 0.10);
-
+                this.currentSwipeChance = 0;
                 this.updateFinishChance();
                 this.stageText.textContent = 'SWIPE';
                 this.stageProgressBar.style.width = '100%';
@@ -440,8 +438,13 @@ class GameSession {
             }
         }
 
-        // Random duration between 10 and 45 seconds
-        const duration = currentMode === 'swipe' ? 10 : Math.floor(Math.random() * (45 - 10 + 1)) + 10;
+        // Fixed duration for swipe, random for others
+        const duration = currentMode === 'swipe' ? 8 : Math.floor(Math.random() * (45 - 10 + 1)) + 10;
+
+        if (currentMode === 'swipe') {
+            if (!this.cumStageCount) this.cumStageCount = 0;
+            this.cumStageCount++;
+        }
         this.stageDuration = duration;
         this.stageRemaining = duration;
 
@@ -477,7 +480,14 @@ class GameSession {
 
     checkFinishRoll() {
         // Use the visually displayed percentage for the roll
-        const chance = this.currentDisplayedChancePercent / 100;
+        let chance = this.currentDisplayedChancePercent / 100;
+
+        if (this.settings.mode === 'swipe') {
+            // Because Swipe mode rolls on *every* right swipe, linear probability
+            // makes it mathematically almost guaranteed to finish too early.
+            // Cubing the chance makes early stages (like 20% or 30%) much safer.
+            chance = Math.pow(chance, 3);
+        }
 
         if (Math.random() < chance) {
             return true; // Will trigger CUM stage
@@ -487,24 +497,19 @@ class GameSession {
 
     currentChance() {
         const currentMode = this.settings.mode || 'edge';
-        let targetSecs;
-        let delaySecs;
 
         if (currentMode === 'swipe') {
-            delaySecs = 0.1 * this.targetSwipeSecs;
-            targetSecs = this.targetSwipeSecs + delaySecs;
-        } else {
-            targetSecs = this.settings.duration * 60;
-            delaySecs = this.delay * targetSecs;
+            return this.currentSwipeChance;
         }
+
+        let targetSecs = this.settings.duration * 60;
+        let delaySecs = this.delay * targetSecs;
 
         if (this.elapsedSeconds <= delaySecs) {
             return 0.0;
         }
 
         let activeTime = this.elapsedSeconds - delaySecs;
-        // exponential decay
-        if (currentMode === 'swipe') activeTime += this.swipeRightCount * (15 / (Math.pow(this.swipeRightCount, 0.175)));
 
         if (activeTime <= 0) return 0.0;
 
@@ -512,7 +517,7 @@ class GameSession {
 
         if (activeTime < targetActiveTime) {
             const progress = activeTime / targetActiveTime;
-            const curveExponent = currentMode === 'swipe' ? 10.0 : 8.0;
+            const curveExponent = 8.0;
             const curve = Math.pow(progress, curveExponent);
             return curve * 0.15;
         } else {
@@ -531,6 +536,8 @@ class GameSession {
 
         if (direction === 'right') {
             this.swipeRightCount++;
+
+            this.currentSwipeChance = Math.min(this.currentSwipeChance + this.swipeChanceIncrement, 1.0);
 
             // Mark right swiped picture as fire automatically so it can repopulate
             const post = this.activeList[this.currentIndex];
@@ -818,7 +825,7 @@ class GameSession {
         // Calculate XP
         let targetSecs;
         if (this.settings.mode === 'swipe') {
-            targetSecs = this.targetSwipeSecs + (0.1 * this.targetSwipeSecs);
+            targetSecs = this.elapsedSeconds; // No xp for swipe, but targetSecs needed for compat
         } else {
             targetSecs = this.settings.duration * 60;
         }
@@ -826,6 +833,14 @@ class GameSession {
         if (window.completeSession) {
             const results = window.completeSession(this.elapsedSeconds, targetSecs, false);
             this.showXpResults(results);
+        }
+
+        const statCumsContainer = document.getElementById('stat-cums-container');
+        if (this.settings.mode === 'swipe') {
+            document.getElementById('stat-cums').textContent = this.cumStageCount || 0;
+            statCumsContainer.classList.remove('hidden');
+        } else {
+            statCumsContainer.classList.add('hidden');
         }
 
         this.finishScreen.classList.remove('hidden');
@@ -840,7 +855,7 @@ class GameSession {
             if (this.elapsedSeconds > 60 && window.completeSession) {
                 let targetSecs;
                 if (this.settings.mode === 'swipe') {
-                    targetSecs = this.targetSwipeSecs + (0.1 * this.targetSwipeSecs);
+                    targetSecs = this.elapsedSeconds;
                 } else {
                     targetSecs = this.settings.duration * 60;
                 }

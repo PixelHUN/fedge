@@ -150,8 +150,8 @@ function updateDifficultyHint() {
     const diff = difficultyInput.value;
 
     if (mode === 'swipe') {
-        const est = { 'easy': '10-15', 'normal': '25-40', 'hard': '40-60', 'extreme': '60-90' };
-        difficultyHint.textContent = `Est. Session: ~${est[diff] || '25-40'} mins`;
+        const est = { 'easy': '~50', 'normal': '~100', 'hard': '~200', 'extreme': '~400' };
+        difficultyHint.textContent = `Est. Right Swipes to 100%: ${est[diff] || '~100'}`;
     } else {
         difficultyHint.textContent = '';
     }
@@ -187,16 +187,18 @@ window.completeSession = function (elapsedSeconds, targetSeconds, isEarlyFinish)
 
     let xpToAdd = 0;
 
-    if (isEarlyFinish) {
-        xpToAdd = Math.floor(Math.pow(minutes, 1.5) * 2);
-    } else {
-        const targetMinutes = Math.floor(targetSeconds / 60);
-        xpToAdd = Math.floor(Math.pow(targetMinutes, 1.5) * 2);
+    if (state.settings.mode !== 'swipe') {
+        if (isEarlyFinish) {
+            xpToAdd = Math.floor(Math.pow(minutes, 1.5) * 2);
+        } else {
+            const targetMinutes = Math.floor(targetSeconds / 60);
+            xpToAdd = Math.floor(Math.pow(targetMinutes, 1.5) * 2);
 
-        if (elapsedSeconds > targetSeconds) {
-            const overtimeMinutes = Math.floor((elapsedSeconds - targetSeconds) / 60);
-            if (overtimeMinutes > 0) {
-                xpToAdd += Math.floor(Math.pow(overtimeMinutes, 1.2) * 3);
+            if (elapsedSeconds > targetSeconds) {
+                const overtimeMinutes = Math.floor((elapsedSeconds - targetSeconds) / 60);
+                if (overtimeMinutes > 0) {
+                    xpToAdd += Math.floor(Math.pow(overtimeMinutes, 1.2) * 3);
+                }
             }
         }
     }
